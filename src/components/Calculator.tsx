@@ -47,15 +47,13 @@ const Calculator: React.FC = observer(() => {
   return (
     <WrapperGrid>
       <Output>
-        <div className="prev">
-          {calc.prev} {calc.operation}
-        </div>
-        <div className="curr">{calc.curr}</div>
+        <div className="prev">{calc.inputValue}</div>
+        <div className="curr">{calc.result}</div>
       </Output>
       <button onClick={() => calc.clear()}>AC</button>
       <button onClick={() => calc.delete()}>DEL</button>
       <OperationButton operation="%" />
-      <OperationButton operation="÷" />
+      <OperationButton operation="/" />
       <DigitButton digit="1" />
       <DigitButton digit="2" />
       <DigitButton digit="3" />

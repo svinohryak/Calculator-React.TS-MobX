@@ -1,4 +1,5 @@
 import { makeAutoObservable } from "mobx";
+import { getCulculutedValue } from "../helpers/index";
 
 interface ICalculator {
   prev: string;
@@ -7,7 +8,7 @@ interface ICalculator {
   operation: string;
   overwrite: boolean;
   clear: () => void;
-  evaluate: () => void;
+  evaluate: (calcInputValue: string) => void;
   addDigit: (digit: string) => void;
 }
 
@@ -17,6 +18,7 @@ class Calculator implements ICalculator {
   result: string = "";
   operation: string = "";
   overwrite: boolean = false;
+  inputValue: string = "";
 
   constructor() {
     makeAutoObservable(this);
@@ -26,70 +28,72 @@ class Calculator implements ICalculator {
     this.curr = "";
     this.prev = "";
     this.operation = "";
+    this.inputValue = "";
+    this.result = "";
+    this.overwrite = false;
   }
+
   delete() {
+    this.inputValue = this.inputValue.slice(0, -1);
     this.curr = this.curr.slice(0, -1);
   }
+
   addDigit(digit: string) {
     if (this.overwrite && !this.operation) {
       this.curr = "";
       this.prev = "";
+      this.result = "";
       this.overwrite = false;
     }
     if (digit === "." && this.curr.includes(".")) return this.curr;
     if (digit === "0" && this.curr === "0") return this.curr;
     if (this.curr[0] === "0" && this.curr.length === 1) {
-      console.log(this.curr);
-
       this.curr = "";
-      console.log(this.curr);
     }
-    if (digit === "." && this.curr === "") return (this.curr = "0.");
+    if (digit === "." && this.curr === "") {
+      this.curr = "0";
+    }
+
     this.curr = `${this.curr}${digit}`;
-  }
-
-  evaluate() {
-    const prevNum: number = parseFloat(this.prev);
-    const currentNum: number = parseFloat(this.curr);
-    if (isNaN(prevNum) || isNaN(currentNum)) return "";
-    let computation: string | number = "";
-    switch (this.operation) {
-      case "+":
-        computation = prevNum + currentNum;
-        break;
-      case "-":
-        computation = prevNum - currentNum;
-        break;
-      case "*":
-        computation = prevNum * currentNum;
-        break;
-      case "÷":
-        computation = prevNum / currentNum;
-        break;
-      case "%":
-        computation = (prevNum * currentNum) / 100;
-        break;
-    }
-
-    this.prev = computation.toString();
-    this.curr = "";
-    this.operation = "";
-    this.overwrite = true;
+    this.inputValue.length < 10
+      ? (this.inputValue = `${this.prev}${this.curr}`)
+      : this.inputValue;
   }
 
   chooseOperations(operation: string) {
-    if (this.curr === "" && this.prev === "") return this.curr;
-    if (this.prev === "") {
-      this.operation = operation;
-      this.prev = this.curr;
-      this.curr = "";
+    const isDoubledOperation = /[*+/-]/.test(
+      this.inputValue[this.inputValue.length - 1]
+    );
+    const isOperationFirst =
+      this.curr === "" && this.prev === "" && operation !== "-";
+
+    if (isOperationFirst) return this.curr;
+    if (isDoubledOperation || this.overwrite) {
+      operation = "";
     }
-    if (!this.operation) {
-      this.operation = operation;
+
+    this.inputValue = this.inputValue + operation;
+    this.prev = this.inputValue;
+    this.curr = "";
+  }
+
+  evaluate() {
+    const computation: number = getCulculutedValue(this.inputValue);
+
+    function round(num: number): number {
+      return Math.round(num * Math.pow(10, 5)) / Math.pow(10, 5);
     }
-    if (this.operation && !this.curr) {
-      this.operation = operation;
+
+    this.prev = round(computation).toString();
+    if (this.prev === "Infinity") {
+      this.prev = "you can't divide by 0";
     }
+    this.curr = "";
+    this.operation = "";
+    this.inputValue = "";
+    this.overwrite = true;
+
+    this.result = this.prev;
   }
 }
 
